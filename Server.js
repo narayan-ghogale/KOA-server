@@ -6,7 +6,9 @@ const MongoClient = require('mongodb').MongoClient;
 const bcrypt = require('bcryptjs');
 var cloudinary = require('cloudinary');
 const spawn = require("child_process").spawn;
-
+var fs=require('fs');
+var multer=require('multer');
+var uploadFile = require("express-fileupload")
 
 
 
@@ -20,15 +22,62 @@ cloudinary.config({
     api_secret: 'M8mjjaOY_d_BmwOLi0r3ktmQL1o' 
   });
 
-
-
-
-
 console.log("starting a backend")
 
 app.use(bodyParser.urlencoded({extended:true}))
 app.use(bodyParser.json())
 app.use(cors())
+
+
+var path = require('path');
+ var storage = multer.diskStorage({
+            destination: function(req, file, callback) {
+                callback(null, 'public');
+            },
+
+            filename: function(req, file, callback) {
+                var fname = file.fieldname + '-' + Date.now() + path.extname(file.originalname);
+
+                callback(null, fname);
+
+            }
+        });
+
+
+var upload = multer({ storage: storage }).single('file')
+app.post('/uploadf',function(req, res) {
+     
+    upload(req, res, function (err) {
+           if (err instanceof multer.MulterError) {
+               console.log(err)
+               return res.status(500).json(err)
+           } else if (err) {
+            console.log(err)
+               return res.status(500).json(err)
+           }
+           else{
+               console.log("done")
+           }
+      return res.status(200).send(req.file)
+    })
+
+});
+// app.post('/uploadf', (req, res, next) => {
+//     let uploadFile = req.files.file
+//     const fileName = req.files.file.name
+//     uploadFile.mv(
+//       `${__dirname}/public/files/${fileName}`,
+//       function (err) {
+//         if (err) {
+//           return res.status(500).send(err)
+//         }
+//         res.json({
+//           file: `public/${req.files.file.name}`,
+//         })
+//       },
+//     )
+//   })
+
 
 app.listen(3001,function(){
     console.log("listening to 3001");
@@ -110,6 +159,7 @@ app.post('/changepass',(req,res1)=>{
             res1.send("Old password do not match");
         }
         })
+
         if(update){
         userscollection.updateOne({mail:thisemail},{ $set:{password:newpasshash}},function(err2,updateres){
         if(err2) throw err2;
@@ -137,7 +187,7 @@ app.post('/register',(req,res1)=>{
        database.collection("users").insertOne(creds,function(err,res){
            if(err) throw err;
            console.log("one user inserted");
-           res1.send("Inserted user");
+           res1.send("Registeration successful, continue to login ");
        })
        
        client.close();
@@ -189,6 +239,23 @@ app.post('/adddetails',(req,res1)=>{
     });
 })
 
+app.post('/alltests',function(req,res){
+    // res.send("trying");
+    MongoClient.connect(uri,{useNewUrlParser: true, useUnifiedTopology: true}, 
+        function(err, client) {
+       if(err) {
+            console.log('Error occurred while connecting to MongoDB Atlas...\n',err);
+       }
+       console.log('Connected...');
+       const collection = client.db("mydb").collection("tests");
+       collection.find({email:req.body.email}).toArray(function(err, results) {
+       console.log(results);
+       res.send(results);
+      });
+       client.close();
+    });
+})
+
 app.get('/run', function (req, res) {
     const subprocess = runScript()
     res.set('Content-Type', 'text/plain');
@@ -196,3 +263,7 @@ app.get('/run', function (req, res) {
     subprocess.stderr.pipe(res)
   })
   
+
+app.get('/getresult',function(req,res){
+    
+})
