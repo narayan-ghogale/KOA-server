@@ -223,21 +223,33 @@ app.post('/adddetails',(req,res1)=>{
        }
        console.log('Connected...');
        const database = client.db("mydb");
-       const imageinfo=client.db('mydb').collection("imageinfo");
        database.collection("details").insertOne(details,function(err,res){
            if(err) throw err;
            console.log("one document inserted");
        })
-
-       imageinfo.updateOne({reference:"this"},{$inc:{imageid:1}},function(err,res){
-        if(err) throw err;
-        console.log("incremented image id");
-    })
-   
-       res1.send("inserted document");
+       res1.send("Saved Details");
        client.close();
     });
 })
+
+app.post('/addtest',(req,res1)=>{
+    let details=req.body.details;
+    MongoClient.connect(uri,{useNewUrlParser: true, useUnifiedTopology: true}, 
+        function(err, client) {
+       if(err) {
+            console.log('Error occurred while connecting to MongoDB Atlas...\n',err);
+       }
+       console.log('Connected...');
+       const database = client.db("mydb");
+       database.collection("tests").insertOne(details,function(err,res){
+           if(err) throw err;
+           console.log("one test inserted");
+       })
+       res1.send("Saved Test Details");
+       client.close();
+    });
+})
+
 
 app.post('/alltests',function(req,res){
     // res.send("trying");
